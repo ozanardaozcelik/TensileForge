@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NN vs XGBOOST ChatBot</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --gold-dark:#B8860B;
+  --black-dark:#111111;
+  --panel-left-light:#FFC0CB;
+  --panel-right-light:#87CEFA;
+  --panel-left-dark: #B8860B;
+  --panel-right-dark: #111111;
+}
+body{
+  margin:0;
+  font-family:'Montserrat',Arial,sans-serif;
+  transition:background-color .3s;
+  background-color: {{ '#121212' if dark_mode else '#FFFFFF' }};
+}
+.container{display:flex;gap:20px;padding:20px}
+.panel{width:45%;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.panel-left{background:var(--panel-left-light);color:white}
+.panel-right{background:var(--panel-right-light);color:black}
+.dark .panel-left{background:var(--panel-left-dark);color:black}
+.dark .panel-right{background:var(--panel-right-dark);color:white}
+label{font-weight:600}
+input,select{width:100%;padding:6px;border-radius:6px;border:none;margin-bottom:6px}
+.predict-btn{padding:10px;border:none;border-radius:8px;font-weight:700;cursor:pointer;width:100%}
+.predict-btn-left{background-color:#FFD700;color:#000}
+.predict-btn-right{background-color:#333;color:#FFF}
+.mode-toggle{position:fixed;top:10px;left:50%;transform:translateX(-50%);padding:6px 12px;border-radius:50%;border:none;background:#666;color:#fff;cursor:pointer}
+.error-msg{color:red;font-weight:700;margin:10px 20px}
+.results{margin-top:10px;padding:10px;background:rgba(255,255,255,0.06);border-radius:8px}
+</style>
+</head>
+<body class="{{ 'dark' if dark_mode else '' }}">
+<button type="button" class="mode-toggle" id="mode-toggle">{{ '🌙' if dark_mode else '☀' }}</button>
+
+<div class="container">
+  <!-- NN form -->
+  <form method="POST" class="panel panel-left" style="display:flex;flex-direction:column;gap:8px;">
+    <h2>NN Modeli (Çoklu Çıktı)</h2>
+    <input type="hidden" name="mode" id="mode-input-nn" value="{{ 'dark' if dark_mode else 'light' }}">
+    <label>Alloy code</label>
+    <select name="Alloy code">
+      {% for a in alloy_codes %}
+        <option value="{{ a }}">{{ a }}</option>
+      {% endfor %}
+    </select>
+
+    {% for f in nn_features[1:] %}
+      <label>{{ f }}</label>
+      <input type="number" step="any" name="{{ f }}" />
+    {% endfor %}
+
+    <button type="submit" name="nn_predict" class="predict-btn predict-btn-left">Tahmin Et (NN)</button>
+
+    {% if nn_pred %}
+      <div class="results">
+        <h4>NN Sonuçları:</h4>
+        {% for k,v in nn_pred.items() %}
+          <div>{{ k }} : {{ "%.6f"|format(v) }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </form>
+
+  <!-- XGB form -->
+  <form method="POST" class="panel panel-right" style="display:flex;flex-direction:column;gap:8px;">
+    <h2>XGBoost Modeli (Tensile Strength)</h2>
+    <input type="hidden" name="mode" id="mode-input-xgb" value="{{ 'dark' if dark_mode else 'light' }}">
+    <label>Alloy code</label>
+    <select name="Alloy code">
+      {% for a in alloy_codes %}
+        <option value="{{ a }}">{{ a }}</option>
+      {% endfor %}
+    </select>
+
+    {% for f in xgb_features[1:] %}
+      <label>{{ f }}</label>
+      <input type="number" step="any" name="{{ f }}" />
+    {% endfor %}
+
+    <button type="submit" name="xgb_predict" class="predict-btn predict-btn-right">Tahmin Et (XGB)</button>
+
+    {% if xgb_pred %}
+      <div class="results">
+        <h4>XGB Sonucu:</h4>
+        {% for k,v in xgb_pred.items() %}
+          <div>{{ k }} : {{ "%.6f"|format(v) }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </form>
+</div>
+
+{% if errors %}
+  <div class="error-msg">
+    {% for e in errors %}
+      <div>{{ e }}</div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<script>
+const modeToggle = document.getElementById('mode-toggle');
+modeToggle.addEventListener('click', () => {
+  const isDark = document.body.classList.toggle('dark');
+  document.getElementById('mode-input-nn').value = isDark ? 'dark' : 'light';
+  document.getElementById('mode-input-xgb').value = isDark ? 'dark' : 'light';
+  modeToggle.innerText = isDark ? '🌙' : '☀';
+  // body background sadece dark modda
+  document.body.style.backgroundColor = isDark ? '#293133' : '#FFFFFF';
+});
+</script>
+</body>
+</html>
